@@ -1,5 +1,5 @@
 // 現場一覧画面：表/カード切替・検索・フィルター・比較選択
-import { el, icon, formatDate, formatCurrency, starHtml, debounce } from "../utils.js";
+import { el, icon, formatDateFull, formatCurrency, starHtml, debounce, todayStr } from "../utils.js";
 import { yearEvents, eventPlannedTotal } from "../calc.js";
 import { findMember, STATUS_LIST } from "../data.js";
 
@@ -43,9 +43,18 @@ function matchesSearch(ctx, event) {
 }
 
 function getFilteredEvents(ctx, year) {
-  return yearEvents(ctx.data.events, year)
-    .filter((e) => matchesFilters(ctx, e) && matchesSearch(ctx, e))
+  return yearEvents(ctx.data.events, year).filter((e) => matchesFilters(ctx, e) && matchesSearch(ctx, e));
+}
+
+function splitByDate(list) {
+  const today = todayStr();
+  const upcoming = list
+    .filter((e) => !e.date || e.date >= today)
     .sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+  const past = list
+    .filter((e) => e.date && e.date < today)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  return { upcoming, past };
 }
 
 export function render(container, ctx) {
@@ -136,10 +145,24 @@ function renderList(wrap, ctx, list) {
     );
     return;
   }
+
+  const { upcoming, past } = splitByDate(list);
+
+  if (upcoming.length) {
+    wrap.appendChild(el("div", { class: "section-label", style: "margin-top:0" }, "🎫 現場予定"));
+    renderGroup(wrap, ctx, upcoming);
+  }
+  if (past.length) {
+    wrap.appendChild(el("div", { class: "section-label" }, "📖 過去現場"));
+    renderGroup(wrap, ctx, past);
+  }
+}
+
+function renderGroup(wrap, ctx, group) {
   if (localState.viewMode === "table") {
-    wrap.appendChild(renderTable(ctx, list));
+    wrap.appendChild(renderTable(ctx, group));
   } else {
-    for (const event of list) wrap.appendChild(renderCard(ctx, event));
+    for (const event of group) wrap.appendChild(renderCard(ctx, event));
   }
 }
 
@@ -150,17 +173,17 @@ function renderTable(ctx, list) {
       "tr",
       { onclick: () => ctx.navigate("eventDetail", { id: event.id }) },
       [
+        el("td", {}, el("span", { class: "status-badge" }, event.status)),
         el("td", {}, event.title || "(無題)"),
-        el("td", {}, formatDate(event.date)),
+        el("td", {}, formatDateFull(event.date)),
         el("td", {}, memberInfo?.member?.name || "-"),
         el("td", {}, formatCurrency(eventPlannedTotal(event))),
-        el("td", {}, el("span", { class: "status-badge" }, event.status)),
       ]
     );
   });
-  return el("div", { class: "genba-table-wrap" }, [
+  return el("div", { class: "genba-table-wrap", style: "margin-bottom:14px" }, [
     el("table", { class: "genba-table" }, [
-      el("thead", {}, el("tr", {}, ["現場", "日付", "推し", "金額", "状態"].map((h) => el("th", {}, h)))),
+      el("thead", {}, el("tr", {}, ["状態", "現場", "日付", "推し", "金額"].map((h) => el("th", {}, h)))),
       el("tbody", {}, rows),
     ]),
   ]);
@@ -195,7 +218,7 @@ function renderCard(ctx, event) {
         ]),
       ]),
       el("div", { class: "meta" }, [
-        el("span", {}, formatDate(event.date)),
+        el("span", {}, formatDateFull(event.date) || "日程未定"),
         el("span", {}, event.venue || "会場未定"),
       ]),
       el("div", { class: "bottom-row" }, [
