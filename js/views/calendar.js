@@ -1,6 +1,6 @@
 // カレンダー画面：月表示・一覧表示・重複検出
-import { el, icon, formatDateFull, pad2, todayStr } from "../utils.js";
-import { yearEvents, duplicateDateMap } from "../calc.js";
+import { el, icon, formatDateFull, formatTimeRange, pad2, todayStr } from "../utils.js";
+import { yearEvents, duplicateDateMap, overlappingDates, overlappingEventIds } from "../calc.js";
 import { findMember } from "../data.js";
 
 const localState = {
@@ -14,6 +14,7 @@ const DOW_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 export function render(container, ctx) {
   const year = ctx.data.settings.currentYear;
   const events = yearEvents(ctx.data.events, year);
+  const overlapIds = overlappingEventIds(ctx.data.events, year);
 
   container.appendChild(el("div", { class: "page-title" }, "カレンダー"));
   container.appendChild(renderYearSwitch(ctx, year));
@@ -24,10 +25,10 @@ export function render(container, ctx) {
     container.appendChild(renderMonthGrid(ctx, year, events));
     container.appendChild(renderLegend());
     if (localState.selectedDate) {
-      container.appendChild(renderDayList(ctx, events, localState.selectedDate));
+      container.appendChild(renderDayList(ctx, events, localState.selectedDate, overlapIds));
     }
   } else {
-    container.appendChild(renderListView(ctx, events));
+    container.appendChild(renderListView(ctx, events, overlapIds));
   }
 }
 
@@ -101,6 +102,7 @@ function renderMonthGrid(ctx, year, events) {
   const firstDow = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const dupMap = duplicateDateMap(events, year);
+  const overlapDates = overlappingDates(events, year);
   const todayISO = todayStr();
 
   const grid = el("div", { class: "calendar-grid" }, DOW_LABELS.map((d) => el("div", { class: "calendar-dow" }, d)));
@@ -112,11 +114,11 @@ function renderMonthGrid(ctx, year, events) {
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${pad2(month + 1)}-${pad2(day)}`;
     const dayEvents = dupMap[dateStr] || [];
-    const isDuplicate = dayEvents.length >= 2;
+    const isDuplicate = overlapDates.has(dateStr);
     const isToday = dateStr === todayISO;
 
     const dots = dayEvents.slice(0, 4).map((e) => {
-      const memberInfo = findMember(ctx.data, e.favoriteId);
+      const memberInfo = findMember(ctx.data, e.mainFavoriteId);
       const color = memberInfo?.member?.color || memberInfo?.group?.color || "#9d8ec9";
       return el("span", { class: "dot", style: `background:${color}` });
     });
@@ -140,31 +142,32 @@ function renderMonthGrid(ctx, year, events) {
 }
 
 function renderLegend() {
-  return el("div", { class: "calendar-legend" }, [el("span", { class: "dot" }), "同日に複数現場（重複）"]);
+  return el("div", { class: "calendar-legend" }, [el("span", { class: "dot" }), "時間帯が重なる現場あり（重複）"]);
 }
 
-function renderDayList(ctx, events, dateStr) {
+function renderDayList(ctx, events, dateStr, overlapIds) {
   const dayEvents = events.filter((e) => e.date === dateStr);
   return el("div", { class: "card", style: "margin-top:14px" }, [
     el("div", { class: "section-label", style: "margin-top:0" }, formatDateFull(dateStr)),
     ...dayEvents.map((e) => {
-      const memberInfo = findMember(ctx.data, e.favoriteId);
+      const memberInfo = findMember(ctx.data, e.mainFavoriteId);
+      const timeRange = formatTimeRange(e.startTime, e.endTime);
       return el(
         "div",
         { class: "mini-list-item tappable", onclick: () => ctx.navigate("eventDetail", { id: e.id }) },
         [
           el("div", { class: "info" }, [
             el("div", { class: "title" }, e.title || "(無題)"),
-            el("div", { class: "sub" }, memberInfo?.member?.name || ""),
+            el("div", { class: "sub" }, [timeRange, memberInfo?.member?.name].filter(Boolean).join(" ・ ")),
           ]),
-          el("span", { class: "status-badge" }, e.status),
+          overlapIds?.has(e.id) ? el("span", { class: "deadline-tag" }, "⚠重複") : el("span", { class: "status-badge" }, e.status),
         ]
       );
     }),
   ]);
 }
 
-function renderListView(ctx, events) {
+function renderListView(ctx, events, overlapIds) {
   const sorted = [...events].filter((e) => e.date).sort((a, b) => a.date.localeCompare(b.date));
   if (!sorted.length) {
     return el("div", { class: "empty-state" }, [icon("event_busy"), el("div", {}, "登録された現場がありません")]);
@@ -173,8 +176,9 @@ function renderListView(ctx, events) {
     "div",
     { class: "card" },
     sorted.map((e) => {
-      const memberInfo = findMember(ctx.data, e.favoriteId);
+      const memberInfo = findMember(ctx.data, e.mainFavoriteId);
       const [m, d] = formatDateFull(e.date).split("(");
+      const timeRange = formatTimeRange(e.startTime, e.endTime);
       return el(
         "div",
         { class: "mini-list-item tappable", onclick: () => ctx.navigate("eventDetail", { id: e.id }) },
@@ -182,9 +186,9 @@ function renderListView(ctx, events) {
           el("div", { class: "mini-date-badge" }, [m, el("span", { class: "dow" }, `(${d}`)]),
           el("div", { class: "info" }, [
             el("div", { class: "title" }, e.title || "(無題)"),
-            el("div", { class: "sub" }, memberInfo?.member?.name || ""),
+            el("div", { class: "sub" }, [timeRange, memberInfo?.member?.name].filter(Boolean).join(" ・ ")),
           ]),
-          el("span", { class: "status-badge" }, e.status),
+          overlapIds?.has(e.id) ? el("span", { class: "deadline-tag" }, "⚠重複") : el("span", { class: "status-badge" }, e.status),
         ]
       );
     })
