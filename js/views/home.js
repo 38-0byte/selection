@@ -1,5 +1,5 @@
 // ホーム画面：今年の推し活状況を一瞬で把握する
-import { el, icon, formatDateFull, formatCurrency, animateCount } from "../utils.js";
+import { el, icon, formatDateFull, formatTimeRange, formatCurrency, animateCount } from "../utils.js";
 import {
   yearEvents,
   statusCounts,
@@ -88,8 +88,9 @@ function renderUpcomingCard(ctx, year) {
   const events = upcomingEvents(ctx.data.events, year, 5);
   const body = events.length
     ? events.map((e) => {
-        const memberInfo = findMember(ctx.data, e.favoriteId);
+        const memberInfo = findMember(ctx.data, e.mainFavoriteId);
         const [m, d] = formatDateFull(e.date).split("(");
+        const timeRange = formatTimeRange(e.startTime, e.endTime);
         return el(
           "div",
           { class: "mini-list-item tappable", onclick: () => ctx.navigate("eventDetail", { id: e.id }) },
@@ -97,7 +98,7 @@ function renderUpcomingCard(ctx, year) {
             el("div", { class: "mini-date-badge" }, [m, el("span", { class: "dow" }, `(${d}`)]),
             el("div", { class: "info" }, [
               el("div", { class: "title" }, e.title || "(無題)"),
-              el("div", { class: "sub" }, memberInfo?.member?.name || ""),
+              el("div", { class: "sub" }, [timeRange, memberInfo?.member?.name].filter(Boolean).join(" ・ ")),
             ]),
           ]
         );
