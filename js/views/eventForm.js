@@ -1,6 +1,6 @@
 // 現場登録・編集画面（1ページ入力）
 import { el, icon, formatCurrency, toast } from "../utils.js";
-import { createEvent, emptyCost, costTotal, allMembers, findGroup, STATUS_LIST, PREFECTURES } from "../data.js";
+import { createEvent, emptyCost, costTotal, allMembers, STATUS_LIST, PREFECTURES } from "../data.js";
 
 function cloneCost(cost) {
   return {
@@ -19,11 +19,13 @@ export function render(container, ctx, params) {
 
   const formState = existing
     ? {
-        favoriteId: existing.favoriteId,
-        groupId: existing.groupId,
+        favoriteIds: [...(existing.favoriteIds || [])],
+        mainFavoriteId: existing.mainFavoriteId || "",
         title: existing.title,
         category: existing.category,
         date: existing.date,
+        startTime: existing.startTime || "",
+        endTime: existing.endTime || "",
         venue: existing.venue,
         prefecture: existing.prefecture,
         priority: existing.priority,
@@ -37,11 +39,13 @@ export function render(container, ctx, params) {
         memo: existing.memo,
       }
     : {
-        favoriteId: "",
-        groupId: "",
+        favoriteIds: [],
+        mainFavoriteId: "",
         title: "",
         category: data.categories[0]?.name || "",
         date: "",
+        startTime: "",
+        endTime: "",
         venue: "",
         prefecture: "",
         priority: 3,
@@ -86,26 +90,72 @@ function buildBasicSection(ctx, formState, errors) {
   const data = ctx.data;
   const members = allMembers(data);
 
-  const favoriteSelect = el(
-    "select",
-    {
-      onchange: (e) => {
-        formState.favoriteId = e.target.value;
-        const found = members.find((m) => m.member.id === e.target.value);
-        formState.groupId = found ? found.group.id : "";
-        groupText.textContent = found ? found.group.name : "未選択";
-      },
-    },
-    [
-      el("option", { value: "", selected: !formState.favoriteId }, "選択してください"),
-      ...members.map((m) =>
-        el("option", { value: m.member.id, selected: m.member.id === formState.favoriteId }, m.member.name)
-      ),
-    ]
-  );
+  const participantsWrap = el("div", { class: "chip-group" });
+  const mainWrap = el("div", { class: "chip-group" });
 
-  const currentGroup = findGroup(data, formState.groupId);
-  const groupText = el("div", { class: "muted", style: "padding:13px 14px; background:var(--color-bg-elevated); border-radius:var(--radius-md); border:1px solid var(--color-border);" }, currentGroup?.name || "未選択");
+  function paintParticipants() {
+    participantsWrap.innerHTML = "";
+    if (!members.length) {
+      participantsWrap.appendChild(
+        el("div", { class: "muted", style: "font-size:13px" }, "推しが登録されていません。設定画面から追加してください。")
+      );
+      return;
+    }
+    for (const { member, group } of members) {
+      const selected = formState.favoriteIds.includes(member.id);
+      participantsWrap.appendChild(
+        el(
+          "button",
+          {
+            class: `chip${selected ? " selected" : ""}`,
+            onclick: () => {
+              if (selected) {
+                formState.favoriteIds = formState.favoriteIds.filter((id) => id !== member.id);
+                if (formState.mainFavoriteId === member.id) {
+                  formState.mainFavoriteId = formState.favoriteIds[0] || "";
+                }
+              } else {
+                formState.favoriteIds = [...formState.favoriteIds, member.id];
+                if (!formState.mainFavoriteId) formState.mainFavoriteId = member.id;
+              }
+              paintParticipants();
+              paintMain();
+            },
+          },
+          `${member.name}（${group.name}）`
+        )
+      );
+    }
+  }
+
+  function paintMain() {
+    mainWrap.innerHTML = "";
+    if (!formState.favoriteIds.length) {
+      mainWrap.appendChild(el("div", { class: "muted", style: "font-size:13px" }, "先に参加推しを選択してください"));
+      return;
+    }
+    for (const id of formState.favoriteIds) {
+      const found = members.find((m) => m.member.id === id);
+      if (!found) continue;
+      const isMain = formState.mainFavoriteId === id;
+      mainWrap.appendChild(
+        el(
+          "button",
+          {
+            class: `chip${isMain ? " selected" : ""}`,
+            onclick: () => {
+              formState.mainFavoriteId = id;
+              paintMain();
+            },
+          },
+          isMain ? [icon("stars"), found.member.name] : [found.member.name]
+        )
+      );
+    }
+  }
+
+  paintParticipants();
+  paintMain();
 
   const titleInput = el("input", {
     type: "text",
@@ -126,6 +176,18 @@ function buildBasicSection(ctx, formState, errors) {
     oninput: (e) => (formState.date = e.target.value),
   });
 
+  const startTimeInput = el("input", {
+    type: "time",
+    value: formState.startTime,
+    oninput: (e) => (formState.startTime = e.target.value),
+  });
+
+  const endTimeInput = el("input", {
+    type: "time",
+    value: formState.endTime,
+    oninput: (e) => (formState.endTime = e.target.value),
+  });
+
   const venueInput = el("input", {
     type: "text",
     placeholder: "例：大阪城ホール",
@@ -144,11 +206,12 @@ function buildBasicSection(ctx, formState, errors) {
 
   return el("div", { class: "form-section" }, [
     el("div", { class: "section-label", style: "margin-top:0" }, "基本情報"),
-    field("推し", favoriteSelect),
-    field("グループ", groupText),
+    el("div", { class: "field" }, [el("label", {}, "参加推し"), participantsWrap]),
+    el("div", { class: "field" }, [el("label", {}, "メイン推し"), mainWrap]),
     field("現場名", titleInput),
     field("カテゴリー", categorySelect),
     field("日付", dateInput),
+    el("div", { class: "field-row" }, [field("開演時間", startTimeInput), field("終演時間", endTimeInput)]),
     field("会場", venueInput),
     field("都道府県", prefSelect),
   ]);
@@ -315,7 +378,7 @@ function buildMemoSection(formState) {
 function handleSave(ctx, formState, isEdit, existing, container) {
   const missing = [];
   if (!formState.title.trim()) missing.push("現場名");
-  if (!formState.favoriteId) missing.push("推し");
+  if (!formState.favoriteIds.length) missing.push("参加推し");
   if (!formState.date) missing.push("日付");
 
   clearErrors(container);
@@ -347,7 +410,7 @@ function clearErrors(container) {
 
 function highlightErrors(container, formState) {
   if (!formState.title.trim()) markError(container, "現場名");
-  if (!formState.favoriteId) markError(container, "推し");
+  if (!formState.favoriteIds.length) markError(container, "参加推し");
   if (!formState.date) markError(container, "日付");
 }
 
@@ -355,7 +418,7 @@ function markError(container, labelText) {
   const labels = Array.from(container.querySelectorAll(".field label"));
   const target = labels.find((l) => l.textContent === labelText);
   if (target) {
-    const input = target.parentElement.querySelector("input, select");
+    const input = target.parentElement.querySelector("input, select, .chip-group");
     if (input) input.classList.add("field-error");
   }
 }
