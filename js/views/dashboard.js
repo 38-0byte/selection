@@ -1,5 +1,5 @@
 // ダッシュボード画面：推し活データ分析
-import { el, formatCurrency, animateCount } from "../utils.js";
+import { el, icon, formatCurrency, animateCount } from "../utils.js";
 import {
   yearEvents,
   plannedSpendTotal,
@@ -11,6 +11,8 @@ import {
 import { findMember, allMembers } from "../data.js";
 
 let chartInstance = null;
+
+const monthlyState = { month: new Date().getMonth() };
 
 export function render(container, ctx) {
   const year = ctx.data.settings.currentYear;
@@ -28,7 +30,7 @@ function renderSpendCard(ctx, year) {
   const planned = plannedSpendTotal(ctx.data.events, year);
   const actual = actualSpendTotal(ctx.data.events, year);
   return el("div", { class: "card" }, [
-    el("div", { class: "section-label", style: "margin-top:0" }, "年間支出"),
+    el("div", { class: "section-label", style: "margin-top:0" }, `${year}年 年間支出`),
     el("div", { class: "card-row" }, [
       el("div", {}, [el("div", { class: "muted", style: "font-size:12px" }, "予定支出"), el("div", { class: "stat-big" }, formatCurrency(planned))]),
       el("div", {}, [el("div", { class: "muted", style: "font-size:12px" }, "実績支出"), el("div", { class: "stat-big" }, formatCurrency(actual))]),
@@ -37,26 +39,39 @@ function renderSpendCard(ctx, year) {
 }
 
 function renderMonthlySpendCard(ctx, year) {
-  const months = monthlySpend(ctx.data.events, year).filter((m) => m.planned > 0 || m.actual > 0);
+  const months = monthlySpend(ctx.data.events, year);
+  const current = months[monthlyState.month];
 
-  const card = el("div", { class: "card" }, [el("div", { class: "section-label", style: "margin-top:0" }, "📅 月間支出")]);
-
-  if (!months.length) {
-    card.appendChild(el("div", { class: "muted", style: "padding:10px 0" }, "現場データがまだありません"));
-    return card;
-  }
-
-  for (const m of months) {
-    card.appendChild(
-      el("div", { style: "margin-bottom:14px" }, [
-        el("div", { style: "font-weight:600; font-size:13.5px; margin-bottom:4px" }, `${m.month}月`),
-        el("div", { class: "stat-line" }, [el("span", { class: "label" }, "予定"), el("span", { class: "value" }, formatCurrency(m.planned))]),
-        el("div", { class: "stat-line" }, [el("span", { class: "label" }, "実績"), el("span", { class: "value" }, formatCurrency(m.actual))]),
-      ])
-    );
-  }
-
-  return card;
+  return el("div", { class: "card" }, [
+    el("div", { class: "section-label", style: "margin-top:0" }, `${year}年 ${current.month}月 月間支出`),
+    el("div", { class: "year-switch", style: "margin:4px 0 14px" }, [
+      el(
+        "button",
+        {
+          onclick: () => {
+            monthlyState.month = monthlyState.month === 0 ? 11 : monthlyState.month - 1;
+            ctx.refresh();
+          },
+        },
+        icon("chevron_left")
+      ),
+      el("div", { class: "year-label", style: "font-size:18px" }, `${current.month}月`),
+      el(
+        "button",
+        {
+          onclick: () => {
+            monthlyState.month = monthlyState.month === 11 ? 0 : monthlyState.month + 1;
+            ctx.refresh();
+          },
+        },
+        icon("chevron_right")
+      ),
+    ]),
+    el("div", { class: "card-row" }, [
+      el("div", {}, [el("div", { class: "muted", style: "font-size:12px" }, "予定支出"), el("div", { class: "stat-big" }, formatCurrency(current.planned))]),
+      el("div", {}, [el("div", { class: "muted", style: "font-size:12px" }, "実績支出"), el("div", { class: "stat-big" }, formatCurrency(current.actual))]),
+    ]),
+  ]);
 }
 
 function renderPieCard(ctx, year) {
