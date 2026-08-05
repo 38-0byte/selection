@@ -1,5 +1,5 @@
 // 現場一覧画面：表/カード切替・検索・フィルター・比較選択
-import { el, icon, formatDateFull, formatCurrency, starHtml, debounce, todayStr } from "../utils.js";
+import { el, icon, formatDateFull, formatTimeRange, formatCurrency, starHtml, debounce, todayStr } from "../utils.js";
 import { yearEvents, eventPlannedTotal } from "../calc.js";
 import { findMember, STATUS_LIST } from "../data.js";
 
@@ -18,7 +18,7 @@ export function resetFilters() {
 
 function matchesFilters(ctx, event) {
   const f = localState.filters;
-  if (f.favoriteId && event.favoriteId !== f.favoriteId) return false;
+  if (f.favoriteId && !(event.favoriteIds || []).includes(f.favoriteId)) return false;
   if (f.category && event.category !== f.category) return false;
   if (f.prefecture && event.prefecture !== f.prefecture) return false;
   if (f.status && event.status !== f.status) return false;
@@ -29,12 +29,12 @@ function matchesFilters(ctx, event) {
 function matchesSearch(ctx, event) {
   const q = localState.search.trim().toLowerCase();
   if (!q) return true;
-  const memberInfo = findMember(ctx.data, event.favoriteId);
+  const participants = (event.favoriteIds || []).map((id) => findMember(ctx.data, id)).filter(Boolean);
   const haystack = [
     event.title,
     event.venue,
-    memberInfo?.member?.name,
-    memberInfo?.group?.name,
+    ...participants.map((p) => p.member?.name),
+    ...participants.map((p) => p.group?.name),
   ]
     .filter(Boolean)
     .join(" ")
@@ -168,15 +168,22 @@ function renderGroup(wrap, ctx, group) {
 
 function renderTable(ctx, list) {
   const rows = list.map((event) => {
-    const memberInfo = findMember(ctx.data, event.favoriteId);
+    const memberInfo = findMember(ctx.data, event.mainFavoriteId);
+    const extraCount = (event.favoriteIds || []).length - 1;
+    const dateCell = el("div", {}, [
+      el("div", {}, formatDateFull(event.date)),
+      formatTimeRange(event.startTime, event.endTime)
+        ? el("div", { class: "muted", style: "font-size:11px" }, formatTimeRange(event.startTime, event.endTime))
+        : null,
+    ]);
     return el(
       "tr",
       { onclick: () => ctx.navigate("eventDetail", { id: event.id }) },
       [
         el("td", {}, el("span", { class: "status-badge" }, event.status)),
         el("td", {}, event.title || "(無題)"),
-        el("td", {}, formatDateFull(event.date)),
-        el("td", {}, memberInfo?.member?.name || "-"),
+        el("td", {}, dateCell),
+        el("td", {}, `${memberInfo?.member?.name || "-"}${extraCount > 0 ? ` 他${extraCount}人` : ""}`),
         el("td", {}, formatCurrency(eventPlannedTotal(event))),
       ]
     );
@@ -190,9 +197,11 @@ function renderTable(ctx, list) {
 }
 
 function renderCard(ctx, event) {
-  const memberInfo = findMember(ctx.data, event.favoriteId);
+  const memberInfo = findMember(ctx.data, event.mainFavoriteId);
   const color = memberInfo?.member?.color || memberInfo?.group?.color || "#9d8ec9";
   const selected = ctx.getCompareSelection().has(event.id);
+  const extraCount = (event.favoriteIds || []).length - 1;
+  const timeRange = formatTimeRange(event.startTime, event.endTime);
 
   const card = el(
     "div",
@@ -213,12 +222,13 @@ function renderCard(ctx, event) {
       ),
       el("div", { class: "top-row" }, [
         el("div", {}, [
-          el("div", { class: "favorite-name" }, memberInfo?.member?.name || ""),
+          el("div", { class: "favorite-name" }, `${memberInfo?.member?.name || ""}${extraCount > 0 ? ` 他${extraCount}人` : ""}`),
           el("div", { class: "title" }, event.title || "(無題)"),
         ]),
       ]),
       el("div", { class: "meta" }, [
         el("span", {}, formatDateFull(event.date) || "日程未定"),
+        timeRange ? el("span", {}, timeRange) : null,
         el("span", {}, event.venue || "会場未定"),
       ]),
       el("div", { class: "bottom-row" }, [
