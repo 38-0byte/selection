@@ -118,104 +118,16 @@ export function createEvent(input) {
 
 export function createDefaultData() {
   const year = new Date().getFullYear();
-
-  const groupNumberI = {
-    id: generateId("group"),
-    name: "Number_i",
-    color: ACCENT_PALETTE[0],
-    members: [{ id: generateId("member"), name: "平野紫耀", color: ACCENT_PALETTE[0] }],
-  };
-  const groupImp = {
-    id: generateId("group"),
-    name: "IMP.",
-    color: ACCENT_PALETTE[1],
-    members: [{ id: generateId("member"), name: "鈴木大河", color: ACCENT_PALETTE[1] }],
-  };
-  const groupSolo = {
-    id: generateId("group"),
-    name: "ソロ・俳優",
-    color: ACCENT_PALETTE[2],
-    members: [{ id: generateId("member"), name: "堂前透", color: ACCENT_PALETTE[2] }],
-  };
-  const groupBand = {
-    id: generateId("group"),
-    name: "キュウソネコカミ",
-    color: ACCENT_PALETTE[3],
-    members: [{ id: generateId("member"), name: "キュウソネコカミ", color: ACCENT_PALETTE[3] }],
-  };
-
-  const favorites = [groupNumberI, groupImp, groupSolo, groupBand];
   const categories = DEFAULT_CATEGORIES.map((name) => ({ id: generateId("category"), name }));
-
-  const sampleEvents = [
-    createEvent({
-      year,
-      favoriteId: groupNumberI.members[0].id,
-      groupId: groupNumberI.id,
-      title: "Number_i LIVE TOUR",
-      category: "ライブ",
-      date: `${year}-10-10`,
-      venue: "大阪城ホール",
-      prefecture: "大阪府",
-      priority: 5,
-      status: "検討中",
-      applicationDeadline: `${year}-08-10`,
-      plannedCost: { ticket: 9800, transportation: 12000, hotel: 8000, goods: 5000, others: [] },
-      actualCost: emptyCost(),
-    }),
-    createEvent({
-      year,
-      favoriteId: groupImp.members[0].id,
-      groupId: groupImp.id,
-      title: "IMP. ライブ",
-      category: "ライブ",
-      date: `${year}-08-20`,
-      venue: "東京ドームシティホール",
-      prefecture: "東京都",
-      priority: 4,
-      status: "当選",
-      paymentDeadline: `${year}-08-20`,
-      plannedCost: { ticket: 8800, transportation: 4000, hotel: 0, goods: 3000, others: [] },
-      actualCost: emptyCost(),
-    }),
-    createEvent({
-      year,
-      favoriteId: groupBand.members[0].id,
-      groupId: groupBand.id,
-      title: "ROCK FESTIVAL",
-      category: "フェス",
-      date: `${year}-08-09`,
-      venue: "野外特設ステージ",
-      prefecture: "千葉県",
-      priority: 4,
-      status: "参戦決定",
-      plannedCost: { ticket: 15000, transportation: 6000, hotel: 12000, goods: 2000, others: [] },
-      actualCost: { ticket: 15000, transportation: 5800, hotel: 12000, goods: 1500, others: [] },
-    }),
-    createEvent({
-      year,
-      favoriteId: groupSolo.members[0].id,
-      groupId: groupSolo.id,
-      title: "舞台『夜想曲』",
-      category: "舞台",
-      date: `${year}-09-13`,
-      venue: "天王洲 銀河劇場",
-      prefecture: "東京都",
-      priority: 3,
-      status: "情報待ち",
-      plannedCost: emptyCost(),
-      actualCost: emptyCost(),
-    }),
-  ];
 
   return {
     appInfo: { appName: "現場SELECTION", version: APP_VERSION },
     settings: {
       currentYear: year,
-      annualBudgets: { [year]: 350000 },
+      annualBudgets: {},
     },
-    favorites,
+    favorites: [],
     categories,
-    events: sampleEvents,
+    events: [],
   };
 }
