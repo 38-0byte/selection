@@ -31,6 +31,13 @@ export function formatDateLong(dateStr) {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日(${DOW_JP[d.getDay()]})`;
 }
 
+// 年を含む短縮形式（例：2026/10/10(土)）。年が分かりにくい日付表示箇所で使用する。
+export function formatDateFull(dateStr) {
+  const d = parseDate(dateStr);
+  if (!d) return "";
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}(${DOW_JP[d.getDay()]})`;
+}
+
 export function daysUntil(dateStr) {
   const target = parseDate(dateStr);
   if (!target) return null;
