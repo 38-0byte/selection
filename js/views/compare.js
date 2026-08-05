@@ -1,5 +1,5 @@
 // 比較画面：候補現場を最大3件横比較
-import { el, formatDate, formatCurrency, starHtml } from "../utils.js";
+import { el, formatDateFull, formatCurrency, starHtml } from "../utils.js";
 import { eventPlannedTotal } from "../calc.js";
 
 export function render(container, ctx, params) {
@@ -15,7 +15,7 @@ export function render(container, ctx, params) {
 
   const rows = [
     { label: "金額", render: (e) => formatCurrency(eventPlannedTotal(e)) },
-    { label: "日付", render: (e) => formatDate(e.date) || "未定" },
+    { label: "日付", render: (e) => formatDateFull(e.date) || "未定" },
     { label: "場所", render: (e) => `${e.venue || "未定"}${e.prefecture ? ` / ${e.prefecture}` : ""}` },
     { label: "優先度", render: (e) => `<span class="stars-display">${starHtml(e.priority)}</span>` },
     { label: "ステータス", render: (e) => `<span class="status-badge">${e.status}</span>` },
