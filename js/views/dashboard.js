@@ -6,6 +6,7 @@ import {
   actualSpendTotal,
   favoriteEventCounts,
   favoriteActualCostTotals,
+  monthlySpend,
 } from "../calc.js";
 import { findMember, allMembers } from "../data.js";
 
@@ -17,6 +18,7 @@ export function render(container, ctx) {
 
   container.appendChild(el("div", { class: "page-title" }, "ダッシュボード"));
   container.appendChild(renderSpendCard(ctx, year));
+  container.appendChild(renderMonthlySpendCard(ctx, year));
   container.appendChild(renderPieCard(ctx, year));
   container.appendChild(renderCountCards(ctx, events));
   container.appendChild(renderFavoriteCountCard(ctx, year));
@@ -32,6 +34,29 @@ function renderSpendCard(ctx, year) {
       el("div", {}, [el("div", { class: "muted", style: "font-size:12px" }, "実績支出"), el("div", { class: "stat-big" }, formatCurrency(actual))]),
     ]),
   ]);
+}
+
+function renderMonthlySpendCard(ctx, year) {
+  const months = monthlySpend(ctx.data.events, year).filter((m) => m.planned > 0 || m.actual > 0);
+
+  const card = el("div", { class: "card" }, [el("div", { class: "section-label", style: "margin-top:0" }, "📅 月間支出")]);
+
+  if (!months.length) {
+    card.appendChild(el("div", { class: "muted", style: "padding:10px 0" }, "現場データがまだありません"));
+    return card;
+  }
+
+  for (const m of months) {
+    card.appendChild(
+      el("div", { style: "margin-bottom:14px" }, [
+        el("div", { style: "font-weight:600; font-size:13.5px; margin-bottom:4px" }, `${m.month}月`),
+        el("div", { class: "stat-line" }, [el("span", { class: "label" }, "予定"), el("span", { class: "value" }, formatCurrency(m.planned))]),
+        el("div", { class: "stat-line" }, [el("span", { class: "label" }, "実績"), el("span", { class: "value" }, formatCurrency(m.actual))]),
+      ])
+    );
+  }
+
+  return card;
 }
 
 function renderPieCard(ctx, year) {
