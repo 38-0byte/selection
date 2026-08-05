@@ -1,6 +1,6 @@
 // 現場詳細画面：情報確認・編集・ステータス変更
-import { el, icon, formatDateLong, formatDateFull, formatCurrency, starHtml, toast } from "../utils.js";
-import { findMember, STATUS_LIST, COST_FIELDS } from "../data.js";
+import { el, icon, formatDateLong, formatDateFull, formatTimeRange, formatCurrency, starHtml, toast } from "../utils.js";
+import { findMember, eventParticipants, STATUS_LIST, COST_FIELDS } from "../data.js";
 import { eventPlannedTotal, eventActualTotal, eventDiff } from "../calc.js";
 
 export function render(container, ctx, params) {
@@ -12,27 +12,42 @@ export function render(container, ctx, params) {
     return;
   }
 
-  const memberInfo = findMember(ctx.data, event.favoriteId);
-  const color = memberInfo?.member?.color || memberInfo?.group?.color || "#9d8ec9";
+  const mainInfo = findMember(ctx.data, event.mainFavoriteId);
+  const participants = eventParticipants(ctx.data, event);
+  const color = mainInfo?.member?.color || mainInfo?.group?.color || "#9d8ec9";
 
-  container.appendChild(renderBasicCard(event, memberInfo, color));
+  container.appendChild(renderBasicCard(event, mainInfo, participants, color));
   container.appendChild(renderCostCard(event));
   if (event.memo) container.appendChild(renderMemoCard(event));
   container.appendChild(renderActions(ctx, event, container));
   container.appendChild(renderDeleteLink(ctx, event, container));
 }
 
-function renderBasicCard(event, memberInfo, color) {
+function renderBasicCard(event, mainInfo, participants, color) {
+  const timeRange = formatTimeRange(event.startTime, event.endTime);
   return el("div", { class: "card" }, [
     el("div", { class: "card-row" }, [
-      el("span", { class: "favorite-name muted" }, memberInfo?.group?.name || ""),
+      el("span", { class: "favorite-name muted" }, mainInfo?.group?.name || ""),
       el("span", { class: "status-badge" }, event.status),
     ]),
     el("div", { class: "page-title", style: `margin:6px 0 4px; border-left:4px solid ${color}; padding-left:10px` }, event.title || "(無題)"),
-    el("div", { class: "muted", style: "margin-bottom:10px" }, memberInfo?.member?.name || ""),
+    el(
+      "div",
+      { class: "pill-row", style: "margin-bottom:6px" },
+      participants.length
+        ? participants.map((p) =>
+            el(
+              "span",
+              { class: "pill" },
+              p.member.id === event.mainFavoriteId ? [icon("stars"), p.member.name] : [p.member.name]
+            )
+          )
+        : [el("span", { class: "muted" }, "推し未設定")]
+    ),
     el("div", { class: "pill-row" }, [
       el("span", { class: "pill" }, [icon("category"), event.category || "未分類"]),
       el("span", { class: "pill" }, [icon("event"), formatDateLong(event.date) || "日程未定"]),
+      timeRange ? el("span", { class: "pill" }, [icon("schedule"), timeRange]) : null,
       el("span", { class: "pill" }, [icon("location_on"), `${event.venue || "会場未定"} ${event.prefecture ? `（${event.prefecture}）` : ""}`]),
     ]),
     el("div", { style: "margin-top:12px" }, [el("span", { class: "stars-display", html: starHtml(event.priority) })]),
