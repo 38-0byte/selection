@@ -19,9 +19,7 @@ export function render(container, ctx, params) {
   container.appendChild(renderCostCard(event));
   if (event.memo) container.appendChild(renderMemoCard(event));
   container.appendChild(renderActions(ctx, event, container));
-
-  const statusModalHost = el("div");
-  container.appendChild(statusModalHost);
+  container.appendChild(renderDeleteLink(ctx, event, container));
 }
 
 function renderBasicCard(event, memberInfo, color) {
@@ -141,6 +139,49 @@ function renderActions(ctx, event, container) {
       [icon("receipt_long"), "実績入力"]
     ),
   ]);
+}
+
+function renderDeleteLink(ctx, event, container) {
+  return el(
+    "div",
+    { style: "margin-top:18px; text-align:center" },
+    el(
+      "button",
+      {
+        class: "btn btn-ghost btn-sm",
+        style: "color:var(--color-danger)",
+        onclick: () => openDeleteModal(ctx, event, container),
+      },
+      [icon("delete_outline"), "この現場を削除"]
+    )
+  );
+}
+
+function openDeleteModal(ctx, event, container) {
+  const overlay = el("div", { class: "modal-overlay", onclick: (e) => { if (e.target === e.currentTarget) overlay.remove(); } }, [
+    el("div", { class: "modal-box" }, [
+      el("h3", {}, "現場を削除しますか？"),
+      el("p", {}, `「${event.title || "(無題)"}」を削除します。\nこの操作は取り消せません。`),
+      el("div", { class: "btn-row" }, [
+        el("button", { class: "btn btn-secondary", onclick: () => overlay.remove() }, "キャンセル"),
+        el(
+          "button",
+          {
+            class: "btn btn-danger",
+            onclick: () => {
+              ctx.data.events = ctx.data.events.filter((e) => e.id !== event.id);
+              ctx.save();
+              overlay.remove();
+              toast("現場を削除しました");
+              ctx.navigate("list");
+            },
+          },
+          "削除する"
+        ),
+      ]),
+    ]),
+  ]);
+  container.appendChild(overlay);
 }
 
 function openStatusModal(ctx, event, container) {
