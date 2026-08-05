@@ -93,14 +93,23 @@ export function memberColor(data, memberId) {
 }
 
 export function createEvent(input) {
+  const favoriteIds = Array.isArray(input.favoriteIds)
+    ? input.favoriteIds.filter(Boolean)
+    : input.favoriteId
+    ? [input.favoriteId]
+    : [];
+  const mainFavoriteId = input.mainFavoriteId || input.favoriteId || favoriteIds[0] || "";
+
   return {
     id: generateId("event"),
     year: input.year,
-    favoriteId: input.favoriteId || "",
-    groupId: input.groupId || "",
+    favoriteIds: favoriteIds.includes(mainFavoriteId) || !mainFavoriteId ? favoriteIds : [...favoriteIds, mainFavoriteId],
+    mainFavoriteId,
     title: input.title || "",
     category: input.category || "",
     date: input.date || "",
+    startTime: input.startTime || "",
+    endTime: input.endTime || "",
     venue: input.venue || "",
     prefecture: input.prefecture || "",
     priority: input.priority ?? 3,
@@ -114,6 +123,13 @@ export function createEvent(input) {
     memo: input.memo || "",
     createdAt: input.createdAt || new Date().toISOString(),
   };
+}
+
+// 現場の参加推し一覧を {member, group} の配列で返す
+export function eventParticipants(data, event) {
+  return (event.favoriteIds || [])
+    .map((id) => findMember(data, id))
+    .filter(Boolean);
 }
 
 export function createDefaultData() {
