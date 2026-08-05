@@ -103,6 +103,18 @@ export function favoriteActualCostTotals(events, year) {
   return totals;
 }
 
+export function monthlySpend(events, year) {
+  const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, planned: 0, actual: 0 }));
+  for (const e of yearEvents(events, year)) {
+    if (!e.date) continue;
+    const m = Number(e.date.slice(5, 7));
+    if (!m || m < 1 || m > 12) continue;
+    months[m - 1].planned += eventPlannedTotal(e);
+    months[m - 1].actual += eventActualTotal(e);
+  }
+  return months;
+}
+
 export function availableYears(events, settings) {
   const years = new Set(events.map((e) => Number(e.year)));
   Object.keys(settings.annualBudgets || {}).forEach((y) => years.add(Number(y)));
