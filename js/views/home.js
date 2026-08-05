@@ -1,5 +1,5 @@
 // ホーム画面：今年の推し活状況を一瞬で把握する
-import { el, icon, formatDate, formatCurrency, animateCount } from "../utils.js";
+import { el, icon, formatDateFull, formatCurrency, animateCount } from "../utils.js";
 import {
   yearEvents,
   statusCounts,
@@ -89,7 +89,7 @@ function renderUpcomingCard(ctx, year) {
   const body = events.length
     ? events.map((e) => {
         const memberInfo = findMember(ctx.data, e.favoriteId);
-        const [m, d] = formatDate(e.date).split("(");
+        const [m, d] = formatDateFull(e.date).split("(");
         return el(
           "div",
           { class: "mini-list-item tappable", onclick: () => ctx.navigate("eventDetail", { id: e.id }) },
