@@ -40,27 +40,37 @@ function repairData(raw) {
       : [],
   }));
 
-  data.events = data.events.map((e) => ({
-    id: e.id || generateId("event"),
-    year: e.year || new Date().getFullYear(),
-    favoriteId: e.favoriteId || "",
-    groupId: e.groupId || "",
-    title: e.title || "",
-    category: e.category || "",
-    date: e.date || "",
-    venue: e.venue || "",
-    prefecture: e.prefecture || "",
-    priority: e.priority ?? 3,
-    status: e.status || "情報待ち",
-    applicationStart: e.applicationStart || "",
-    applicationDeadline: e.applicationDeadline || "",
-    resultDate: e.resultDate || "",
-    paymentDeadline: e.paymentDeadline || "",
-    plannedCost: e.plannedCost || emptyCost(),
-    actualCost: e.actualCost || emptyCost(),
-    memo: e.memo || "",
-    createdAt: e.createdAt || new Date().toISOString(),
-  }));
+  data.events = data.events.map((e) => {
+    // 旧データ（単一favoriteId）からの自動移行：favoriteIds/mainFavoriteId形式へ変換
+    let favoriteIds = Array.isArray(e.favoriteIds) ? e.favoriteIds.filter(Boolean) : [];
+    if (!favoriteIds.length && e.favoriteId) favoriteIds = [e.favoriteId];
+    let mainFavoriteId = e.mainFavoriteId || e.favoriteId || favoriteIds[0] || "";
+    if (mainFavoriteId && !favoriteIds.includes(mainFavoriteId)) favoriteIds.push(mainFavoriteId);
+
+    return {
+      id: e.id || generateId("event"),
+      year: e.year || new Date().getFullYear(),
+      favoriteIds,
+      mainFavoriteId,
+      title: e.title || "",
+      category: e.category || "",
+      date: e.date || "",
+      startTime: e.startTime || "",
+      endTime: e.endTime || "",
+      venue: e.venue || "",
+      prefecture: e.prefecture || "",
+      priority: e.priority ?? 3,
+      status: e.status || "情報待ち",
+      applicationStart: e.applicationStart || "",
+      applicationDeadline: e.applicationDeadline || "",
+      resultDate: e.resultDate || "",
+      paymentDeadline: e.paymentDeadline || "",
+      plannedCost: e.plannedCost || emptyCost(),
+      actualCost: e.actualCost || emptyCost(),
+      memo: e.memo || "",
+      createdAt: e.createdAt || new Date().toISOString(),
+    };
+  });
 
   return data;
 }
