@@ -83,24 +83,82 @@ export function duplicateDateMap(events, year) {
   return map;
 }
 
+// 参加推し全員に1件ずつカウント（合同イベントは全員の現場数に加算される）
 export function favoriteEventCounts(events, year) {
   const counts = {};
   for (const e of yearEvents(events, year)) {
-    if (!e.favoriteId) continue;
-    counts[e.favoriteId] = (counts[e.favoriteId] || 0) + 1;
+    for (const fid of e.favoriteIds || []) {
+      counts[fid] = (counts[fid] || 0) + 1;
+    }
   }
   return counts;
 }
 
+// 合同イベントの実績費用は参加推し全員で均等に按分する
 export function favoriteActualCostTotals(events, year) {
   const totals = {};
   for (const e of yearEvents(events, year)) {
-    if (!e.favoriteId) continue;
+    const ids = e.favoriteIds || [];
+    if (!ids.length) continue;
     const total = eventActualTotal(e);
     if (total <= 0) continue;
-    totals[e.favoriteId] = (totals[e.favoriteId] || 0) + total;
+    const share = Math.round(total / ids.length);
+    for (const fid of ids) {
+      totals[fid] = (totals[fid] || 0) + share;
+    }
   }
   return totals;
+}
+
+// 時刻文字列("HH:MM")を分単位の数値に変換。未入力はnull
+function timeToMinutes(t) {
+  if (!t) return null;
+  const [h, m] = t.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  return h * 60 + m;
+}
+
+// 同日の2現場が時間帯として重なっているか判定。どちらかの時間が未入力の場合は同日重複として扱う（従来仕様との後方互換）
+export function eventsOverlap(a, b) {
+  if (!a.date || a.date !== b.date) return false;
+  const aStart = timeToMinutes(a.startTime);
+  const aEnd = timeToMinutes(a.endTime);
+  const bStart = timeToMinutes(b.startTime);
+  const bEnd = timeToMinutes(b.endTime);
+  if (aStart === null || aEnd === null || bStart === null || bEnd === null) return true;
+  return aStart < bEnd && bStart < aEnd;
+}
+
+// 時間帯が重なっている現場のID集合
+export function overlappingEventIds(events, year) {
+  const overlapping = new Set();
+  const byDate = {};
+  for (const e of yearEvents(events, year)) {
+    if (!e.date) continue;
+    if (!byDate[e.date]) byDate[e.date] = [];
+    byDate[e.date].push(e);
+  }
+  for (const list of Object.values(byDate)) {
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        if (eventsOverlap(list[i], list[j])) {
+          overlapping.add(list[i].id);
+          overlapping.add(list[j].id);
+        }
+      }
+    }
+  }
+  return overlapping;
+}
+
+// 時間帯重複を持つ現場が存在する日付の集合（カレンダーのセル強調用）
+export function overlappingDates(events, year) {
+  const ids = overlappingEventIds(events, year);
+  const dates = new Set();
+  for (const e of yearEvents(events, year)) {
+    if (ids.has(e.id)) dates.add(e.date);
+  }
+  return dates;
 }
 
 export function monthlySpend(events, year) {
