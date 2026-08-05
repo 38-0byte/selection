@@ -46,6 +46,13 @@ export function daysUntil(dateStr) {
   return Math.round(diffMs / 86400000);
 }
 
+export function formatTimeRange(startTime, endTime) {
+  if (startTime && endTime) return `${startTime}〜${endTime}`;
+  if (startTime) return `${startTime}〜`;
+  if (endTime) return `〜${endTime}`;
+  return "";
+}
+
 export function formatCurrency(num) {
   const n = Number(num) || 0;
   return `${n.toLocaleString("ja-JP")}円`;
