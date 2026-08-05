@@ -1,5 +1,5 @@
 // カレンダー画面：月表示・一覧表示・重複検出
-import { el, icon, formatDate, pad2 } from "../utils.js";
+import { el, icon, formatDateFull, pad2, todayStr } from "../utils.js";
 import { yearEvents, duplicateDateMap } from "../calc.js";
 import { findMember } from "../data.js";
 
@@ -16,6 +16,7 @@ export function render(container, ctx) {
   const events = yearEvents(ctx.data.events, year);
 
   container.appendChild(el("div", { class: "page-title" }, "カレンダー"));
+  container.appendChild(renderYearSwitch(ctx, year));
   container.appendChild(renderToggle(ctx));
 
   if (localState.mode === "month") {
@@ -28,6 +29,14 @@ export function render(container, ctx) {
   } else {
     container.appendChild(renderListView(ctx, events));
   }
+}
+
+function renderYearSwitch(ctx, year) {
+  return el("div", { class: "year-switch" }, [
+    el("button", { onclick: () => ctx.setYear(year - 1) }, icon("chevron_left")),
+    el("div", { class: "year-label" }, `${year}年`),
+    el("button", { onclick: () => ctx.setYear(year + 1) }, icon("chevron_right")),
+  ]);
 }
 
 function renderToggle(ctx) {
@@ -58,20 +67,30 @@ function renderToggle(ctx) {
 }
 
 function renderMonthNav(ctx, year) {
-  return el("div", { class: "year-switch" }, [
+  return el("div", { class: "year-switch", style: "margin-top:-8px" }, [
     el("button", {
       onclick: () => {
-        localState.month = (localState.month + 11) % 12;
         localState.selectedDate = null;
-        ctx.refresh();
+        if (localState.month === 0) {
+          localState.month = 11;
+          ctx.setYear(year - 1);
+        } else {
+          localState.month -= 1;
+          ctx.refresh();
+        }
       },
     }, icon("chevron_left")),
-    el("div", { class: "year-label" }, `${year}年 ${localState.month + 1}月`),
+    el("div", { class: "year-label", style: "font-size:16px" }, `${localState.month + 1}月`),
     el("button", {
       onclick: () => {
-        localState.month = (localState.month + 1) % 12;
         localState.selectedDate = null;
-        ctx.refresh();
+        if (localState.month === 11) {
+          localState.month = 0;
+          ctx.setYear(year + 1);
+        } else {
+          localState.month += 1;
+          ctx.refresh();
+        }
       },
     }, icon("chevron_right")),
   ]);
@@ -82,7 +101,7 @@ function renderMonthGrid(ctx, year, events) {
   const firstDow = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const dupMap = duplicateDateMap(events, year);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayISO = todayStr();
 
   const grid = el("div", { class: "calendar-grid" }, DOW_LABELS.map((d) => el("div", { class: "calendar-dow" }, d)));
 
@@ -94,7 +113,7 @@ function renderMonthGrid(ctx, year, events) {
     const dateStr = `${year}-${pad2(month + 1)}-${pad2(day)}`;
     const dayEvents = dupMap[dateStr] || [];
     const isDuplicate = dayEvents.length >= 2;
-    const isToday = dateStr === todayStr;
+    const isToday = dateStr === todayISO;
 
     const dots = dayEvents.slice(0, 4).map((e) => {
       const memberInfo = findMember(ctx.data, e.favoriteId);
@@ -127,7 +146,7 @@ function renderLegend() {
 function renderDayList(ctx, events, dateStr) {
   const dayEvents = events.filter((e) => e.date === dateStr);
   return el("div", { class: "card", style: "margin-top:14px" }, [
-    el("div", { class: "section-label", style: "margin-top:0" }, formatDate(dateStr)),
+    el("div", { class: "section-label", style: "margin-top:0" }, formatDateFull(dateStr)),
     ...dayEvents.map((e) => {
       const memberInfo = findMember(ctx.data, e.favoriteId);
       return el(
@@ -155,7 +174,7 @@ function renderListView(ctx, events) {
     { class: "card" },
     sorted.map((e) => {
       const memberInfo = findMember(ctx.data, e.favoriteId);
-      const [m, d] = formatDate(e.date).split("(");
+      const [m, d] = formatDateFull(e.date).split("(");
       return el(
         "div",
         { class: "mini-list-item tappable", onclick: () => ctx.navigate("eventDetail", { id: e.id }) },
