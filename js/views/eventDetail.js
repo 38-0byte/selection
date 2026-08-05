@@ -1,5 +1,5 @@
 // 現場詳細画面：情報確認・編集・ステータス変更
-import { el, icon, formatDateLong, formatCurrency, starHtml, toast } from "../utils.js";
+import { el, icon, formatDateLong, formatDateFull, formatCurrency, starHtml, toast } from "../utils.js";
 import { findMember, STATUS_LIST, COST_FIELDS } from "../data.js";
 import { eventPlannedTotal, eventActualTotal, eventDiff } from "../calc.js";
 
@@ -52,7 +52,7 @@ function renderDeadlineList(event) {
     "div",
     { style: "margin-top:14px" },
     rows.map(([label, value]) =>
-      el("div", { class: "stat-line" }, [el("span", { class: "label" }, label), el("span", { class: "value" }, value)])
+      el("div", { class: "stat-line" }, [el("span", { class: "label" }, label), el("span", { class: "value" }, formatDateFull(value) || value)])
     )
   );
 }
