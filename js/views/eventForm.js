@@ -142,7 +142,7 @@ function buildBasicSection(ctx, formState, errors) {
     ]
   );
 
-  return el("div", {}, [
+  return el("div", { class: "form-section" }, [
     el("div", { class: "section-label", style: "margin-top:0" }, "基本情報"),
     field("推し", favoriteSelect),
     field("グループ", groupText),
@@ -170,7 +170,7 @@ function buildPrioritySection(formState) {
     }
   }
   paint();
-  return el("div", {}, [el("div", { class: "section-label", style: "margin-top:0" }, "優先度"), wrap]);
+  return el("div", { class: "form-section" }, [el("div", { class: "section-label", style: "margin-top:0" }, "優先度"), wrap]);
 }
 
 function buildStatusSection(formState) {
@@ -193,7 +193,7 @@ function buildStatusSection(formState) {
     }
   }
   paint();
-  return el("div", {}, [el("div", { class: "section-label", style: "margin-top:0" }, "ステータス"), wrap]);
+  return el("div", { class: "form-section" }, [el("div", { class: "section-label", style: "margin-top:0" }, "ステータス"), wrap]);
 }
 
 function buildCostSection(label, costObj) {
@@ -279,7 +279,7 @@ function buildCostSection(label, costObj) {
     "＋ その他費用を追加"
   );
 
-  return el("div", {}, [
+  return el("div", { class: "form-section" }, [
     el("div", { class: "section-label", style: "margin-top:0" }, label),
     grid,
     othersWrap,
@@ -294,7 +294,7 @@ function buildDeadlineSection(formState) {
   const resultInput = el("input", { type: "date", value: formState.resultDate, oninput: (e) => (formState.resultDate = e.target.value) });
   const paymentInput = el("input", { type: "date", value: formState.paymentDeadline, oninput: (e) => (formState.paymentDeadline = e.target.value) });
 
-  return el("div", {}, [
+  return el("div", { class: "form-section" }, [
     el("div", { class: "section-label", style: "margin-top:0" }, "応募・期限情報"),
     field("応募開始日", startInput),
     field("応募締切", deadlineInput),
@@ -309,7 +309,7 @@ function buildMemoSection(formState) {
     oninput: (e) => (formState.memo = e.target.value),
   });
   textarea.value = formState.memo || "";
-  return el("div", {}, [el("div", { class: "section-label", style: "margin-top:0" }, "メモ"), el("div", { class: "field" }, textarea)]);
+  return el("div", { class: "form-section" }, [el("div", { class: "section-label", style: "margin-top:0" }, "メモ"), el("div", { class: "field" }, textarea)]);
 }
 
 function handleSave(ctx, formState, isEdit, existing, container) {
