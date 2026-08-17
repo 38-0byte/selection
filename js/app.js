@@ -79,11 +79,6 @@ export const ctx = {
       ctx.navigate("home");
     }
   },
-  setYear(year) {
-    state.data.settings.currentYear = Number(year);
-    ctx.save();
-    render();
-  },
   getCompareSelection() {
     return state.compareSelection;
   },
@@ -133,8 +128,9 @@ function renderHeader() {
   }
   topHeader.style.display = "flex";
   clearNode(topHeader);
+  const eventFormTitles = { edit: "現場を編集", duplicate: "現場を複製" };
   const titles = {
-    eventForm: entry.params?.mode === "edit" ? "現場を編集" : "現場を登録",
+    eventForm: eventFormTitles[entry.params?.mode] || "現場を登録",
     eventDetail: "現場詳細",
     compare: "現場を比較",
   };
