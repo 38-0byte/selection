@@ -173,10 +173,9 @@ export function monthlySpend(events, year) {
   return months;
 }
 
-export function availableYears(events, settings) {
-  const years = new Set(events.map((e) => Number(e.year)));
-  Object.keys(settings.annualBudgets || {}).forEach((y) => years.add(Number(y)));
-  years.add(Number(settings.currentYear));
+// 登録済みイベントに存在する年一覧（各画面の年選択UIの選択肢に使用。画面間で共有する状態ではない）
+export function availableYears(events) {
+  const years = new Set(events.map((e) => Number(e.year)).filter(Boolean));
   years.add(new Date().getFullYear());
   return Array.from(years).sort((a, b) => a - b);
 }
