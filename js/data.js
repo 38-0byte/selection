@@ -1,5 +1,5 @@
 // データモデル定義・初期データ・ID生成・CRUDヘルパー
-import { todayStr } from "./utils.js";
+import { todayStr, hexToRgba } from "./utils.js";
 
 export const APP_VERSION = "1.0";
 
@@ -14,6 +14,40 @@ export const STATUS_LIST = [
   "見送り",
   "参戦済",
 ];
+
+// ステータスごとの色（ホテルライク・くすみカラーに統一。当選/参戦決定は同じ赤、落選/見送りは同じグレー）
+export const STATUS_COLORS = {
+  情報待ち: "#5b8fc0",
+  検討中: "#7fb17d",
+  応募予定: "#d4b45a",
+  応募済: "#c08552",
+  当選: "#c9756f",
+  落選: "#7d7986",
+  参戦決定: "#c9756f",
+  見送り: "#7d7986",
+  参戦済: "#9d8ec9",
+};
+
+// 一覧上で特に目立たせたいステータス（参戦決定＝行くと決めた現場）
+export const STATUS_EMPHASIZED = new Set(["参戦決定"]);
+
+// ステータスバッジ用のインラインstyle文字列を返す
+export function statusBadgeStyle(status) {
+  const color = STATUS_COLORS[status] || "#9d8ec9";
+  if (STATUS_EMPHASIZED.has(status)) {
+    return `background:${color}; color:#fff; font-weight:700;`;
+  }
+  return `background:${hexToRgba(color, 0.16)}; color:${color};`;
+}
+
+// ステータス選択チップ（登録画面・状態変更モーダル）用のインラインstyle文字列を返す
+export function statusChipStyle(status, selected) {
+  const color = STATUS_COLORS[status] || "#9d8ec9";
+  if (selected) {
+    return `background:${color}; border-color:${color}; color:#fff;`;
+  }
+  return `border-color:${hexToRgba(color, 0.45)}; color:${color};`;
+}
 
 export const COST_FIELDS = [
   { key: "ticket", label: "チケット" },
