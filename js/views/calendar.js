@@ -1,7 +1,7 @@
 // カレンダー画面：月表示・一覧表示・重複検出
 import { el, icon, formatDateFull, formatTimeRange, pad2, todayStr } from "../utils.js";
 import { yearEvents, duplicateDateMap, overlappingDates, overlappingEventIds } from "../calc.js";
-import { findMember } from "../data.js";
+import { findMember, statusBadgeStyle } from "../data.js";
 
 // カレンダー画面専用の対象年・月（他画面の年状態とは独立）
 const localState = {
@@ -162,7 +162,7 @@ function renderDayList(ctx, events, dateStr, overlapIds) {
             el("div", { class: "title" }, e.title || "(無題)"),
             el("div", { class: "sub" }, [timeRange, memberInfo?.member?.name].filter(Boolean).join(" ・ ")),
           ]),
-          overlapIds?.has(e.id) ? el("span", { class: "deadline-tag" }, "⚠重複") : el("span", { class: "status-badge" }, e.status),
+          overlapIds?.has(e.id) ? el("span", { class: "deadline-tag" }, "⚠重複") : el("span", { class: "status-badge", style: statusBadgeStyle(e.status) }, e.status),
         ]
       );
     }),
@@ -190,7 +190,7 @@ function renderListView(ctx, events, overlapIds) {
             el("div", { class: "title" }, e.title || "(無題)"),
             el("div", { class: "sub" }, [timeRange, memberInfo?.member?.name].filter(Boolean).join(" ・ ")),
           ]),
-          overlapIds?.has(e.id) ? el("span", { class: "deadline-tag" }, "⚠重複") : el("span", { class: "status-badge" }, e.status),
+          overlapIds?.has(e.id) ? el("span", { class: "deadline-tag" }, "⚠重複") : el("span", { class: "status-badge", style: statusBadgeStyle(e.status) }, e.status),
         ]
       );
     })
