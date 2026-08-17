@@ -1,6 +1,6 @@
 // 現場登録・編集画面（1ページ入力）
 import { el, icon, formatCurrency, toast } from "../utils.js";
-import { createEvent, emptyCost, costTotal, allMembers, STATUS_LIST, PREFECTURES } from "../data.js";
+import { createEvent, emptyCost, costTotal, allMembers, STATUS_LIST, PREFECTURES, statusChipStyle } from "../data.js";
 
 function cloneCost(cost) {
   return {
@@ -269,6 +269,7 @@ function buildStatusSection(formState) {
         "button",
         {
           class: `status-chip${formState.status === s ? " selected" : ""}`,
+          style: statusChipStyle(s, formState.status === s),
           onclick: () => {
             formState.status = s;
             paint();
