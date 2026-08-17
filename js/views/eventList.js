@@ -1,17 +1,20 @@
 // 現場一覧画面：表/カード切替・検索・フィルター・比較選択
 import { el, icon, formatDateFull, formatTimeRange, formatCurrency, starHtml, debounce, todayStr } from "../utils.js";
-import { yearEvents, eventPlannedTotal } from "../calc.js";
+import { eventPlannedTotal, availableYears } from "../calc.js";
 import { findMember, STATUS_LIST } from "../data.js";
 
+// 現場一覧画面専用の状態。年フィルターは他画面の年状態と独立し、初期値は「すべての年」
 const localState = {
   viewMode: "card",
   search: "",
+  yearFilter: "all",
   filters: { favoriteId: "", category: "", prefecture: "", status: "", priority: "" },
   sheetOpen: false,
 };
 
 export function resetFilters() {
   localState.search = "";
+  localState.yearFilter = "all";
   localState.filters = { favoriteId: "", category: "", prefecture: "", status: "", priority: "" };
   localState.sheetOpen = false;
 }
@@ -42,8 +45,12 @@ function matchesSearch(ctx, event) {
   return haystack.includes(q);
 }
 
-function getFilteredEvents(ctx, year) {
-  return yearEvents(ctx.data.events, year).filter((e) => matchesFilters(ctx, e) && matchesSearch(ctx, e));
+function getFilteredEvents(ctx) {
+  const byYear =
+    localState.yearFilter === "all"
+      ? ctx.data.events
+      : ctx.data.events.filter((e) => Number(e.year) === Number(localState.yearFilter));
+  return byYear.filter((e) => matchesFilters(ctx, e) && matchesSearch(ctx, e));
 }
 
 function splitByDate(list) {
@@ -58,13 +65,12 @@ function splitByDate(list) {
 }
 
 export function render(container, ctx) {
-  const year = ctx.data.settings.currentYear;
-
   container.appendChild(el("div", { class: "page-title" }, "現場一覧"));
+  container.appendChild(renderYearFilter(ctx));
   container.appendChild(renderSearchBar(ctx));
   container.appendChild(renderToolbar(ctx));
 
-  const list = getFilteredEvents(ctx, year);
+  const list = getFilteredEvents(ctx);
   const listWrap = el("div", { id: "event-list-body" });
   container.appendChild(listWrap);
   renderList(listWrap, ctx, list);
@@ -79,6 +85,26 @@ export function render(container, ctx) {
   if (selection.size >= 1) {
     container.appendChild(renderCompareBar(ctx));
   }
+}
+
+function renderYearFilter(ctx) {
+  const years = availableYears(ctx.data.events);
+  const select = el(
+    "select",
+    {
+      onchange: (e) => {
+        localState.yearFilter = e.target.value;
+        ctx.refresh();
+      },
+    },
+    [
+      el("option", { value: "all", selected: localState.yearFilter === "all" }, "すべての年"),
+      ...years.map((y) =>
+        el("option", { value: String(y), selected: String(y) === String(localState.yearFilter) }, `${y}年`)
+      ),
+    ]
+  );
+  return el("div", { class: "field", style: "margin-bottom:12px" }, select);
 }
 
 function renderSearchBar(ctx) {
