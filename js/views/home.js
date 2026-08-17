@@ -9,9 +9,11 @@ import {
 } from "../calc.js";
 import { findMember } from "../data.js";
 
+// ホーム画面専用の対象年（他画面の年状態とは独立）
+const localState = { year: new Date().getFullYear() };
+
 export function render(container, ctx) {
-  const { data } = ctx;
-  const year = data.settings.currentYear;
+  const year = localState.year;
 
   container.appendChild(renderYearSwitch(ctx, year));
   container.appendChild(renderStatusCard(ctx, year));
@@ -22,9 +24,9 @@ export function render(container, ctx) {
 
 function renderYearSwitch(ctx, year) {
   return el("div", { class: "year-switch" }, [
-    el("button", { onclick: () => ctx.setYear(year - 1) }, icon("chevron_left")),
+    el("button", { onclick: () => { localState.year -= 1; ctx.refresh(); } }, icon("chevron_left")),
     el("div", { class: "year-label" }, `${year}年`),
-    el("button", { onclick: () => ctx.setYear(year + 1) }, icon("chevron_right")),
+    el("button", { onclick: () => { localState.year += 1; ctx.refresh(); } }, icon("chevron_right")),
   ]);
 }
 
