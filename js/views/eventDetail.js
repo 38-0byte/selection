@@ -20,6 +20,7 @@ export function render(container, ctx, params) {
   container.appendChild(renderCostCard(event));
   if (event.memo) container.appendChild(renderMemoCard(event));
   container.appendChild(renderActions(ctx, event, container));
+  container.appendChild(renderDuplicateButton(ctx, event));
   container.appendChild(renderDeleteLink(ctx, event, container));
 }
 
@@ -154,6 +155,21 @@ function renderActions(ctx, event, container) {
       [icon("receipt_long"), "実績入力"]
     ),
   ]);
+}
+
+function renderDuplicateButton(ctx, event) {
+  return el(
+    "div",
+    { style: "margin-top:14px" },
+    el(
+      "button",
+      {
+        class: "btn btn-secondary",
+        onclick: () => ctx.navigate("eventForm", { mode: "duplicate", sourceId: event.id }),
+      },
+      [icon("content_copy"), "この現場を複製"]
+    )
+  );
 }
 
 function renderDeleteLink(ctx, event, container) {
