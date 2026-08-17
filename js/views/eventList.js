@@ -1,7 +1,7 @@
 // 現場一覧画面：表/カード切替・検索・フィルター・比較選択
 import { el, icon, formatDateFull, formatTimeRange, formatCurrency, starHtml, debounce, todayStr } from "../utils.js";
 import { eventPlannedTotal, availableYears } from "../calc.js";
-import { findMember, STATUS_LIST } from "../data.js";
+import { findMember, STATUS_LIST, statusBadgeStyle } from "../data.js";
 
 // 現場一覧画面専用の状態。年フィルターは他画面の年状態と独立し、初期値は「すべての年」
 const localState = {
@@ -206,7 +206,7 @@ function renderTable(ctx, list) {
       "tr",
       { onclick: () => ctx.navigate("eventDetail", { id: event.id }) },
       [
-        el("td", {}, el("span", { class: "status-badge" }, event.status)),
+        el("td", {}, el("span", { class: "status-badge", style: statusBadgeStyle(event.status) }, event.status)),
         el("td", {}, event.title || "(無題)"),
         el("td", {}, dateCell),
         el("td", {}, `${memberInfo?.member?.name || "-"}${extraCount > 0 ? ` 他${extraCount}人` : ""}`),
@@ -259,7 +259,7 @@ function renderCard(ctx, event) {
       ]),
       el("div", { class: "bottom-row" }, [
         el("span", { class: "stars-display", html: starHtml(event.priority) }),
-        el("span", { class: "status-badge" }, event.status),
+        el("span", { class: "status-badge", style: statusBadgeStyle(event.status) }, event.status),
       ]),
       el("div", { class: "bottom-row" }, [
         el("span", { class: "price" }, formatCurrency(eventPlannedTotal(event))),
