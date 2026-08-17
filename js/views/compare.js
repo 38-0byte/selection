@@ -1,6 +1,7 @@
 // 比較画面：候補現場を最大3件横比較
 import { el, formatDateFull, formatCurrency, starHtml } from "../utils.js";
 import { eventPlannedTotal } from "../calc.js";
+import { statusBadgeStyle } from "../data.js";
 
 export function render(container, ctx, params) {
   const ids = params.ids && params.ids.length ? params.ids : Array.from(ctx.getCompareSelection());
@@ -18,7 +19,7 @@ export function render(container, ctx, params) {
     { label: "日付", render: (e) => formatDateFull(e.date) || "未定" },
     { label: "場所", render: (e) => `${e.venue || "未定"}${e.prefecture ? ` / ${e.prefecture}` : ""}` },
     { label: "優先度", render: (e) => `<span class="stars-display">${starHtml(e.priority)}</span>` },
-    { label: "ステータス", render: (e) => `<span class="status-badge">${e.status}</span>` },
+    { label: "ステータス", render: (e) => `<span class="status-badge" style="${statusBadgeStyle(e.status)}">${e.status}</span>` },
   ];
 
   const headerRow = el("tr", {}, [
