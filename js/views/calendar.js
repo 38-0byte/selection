@@ -3,7 +3,9 @@ import { el, icon, formatDateFull, formatTimeRange, pad2, todayStr } from "../ut
 import { yearEvents, duplicateDateMap, overlappingDates, overlappingEventIds } from "../calc.js";
 import { findMember } from "../data.js";
 
+// カレンダー画面専用の対象年・月（他画面の年状態とは独立）
 const localState = {
+  year: new Date().getFullYear(),
   mode: "month",
   month: new Date().getMonth(),
   selectedDate: null,
@@ -12,7 +14,7 @@ const localState = {
 const DOW_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
 export function render(container, ctx) {
-  const year = ctx.data.settings.currentYear;
+  const year = localState.year;
   const events = yearEvents(ctx.data.events, year);
   const overlapIds = overlappingEventIds(ctx.data.events, year);
 
@@ -34,9 +36,9 @@ export function render(container, ctx) {
 
 function renderYearSwitch(ctx, year) {
   return el("div", { class: "year-switch" }, [
-    el("button", { onclick: () => ctx.setYear(year - 1) }, icon("chevron_left")),
+    el("button", { onclick: () => { localState.year -= 1; ctx.refresh(); } }, icon("chevron_left")),
     el("div", { class: "year-label" }, `${year}年`),
-    el("button", { onclick: () => ctx.setYear(year + 1) }, icon("chevron_right")),
+    el("button", { onclick: () => { localState.year += 1; ctx.refresh(); } }, icon("chevron_right")),
   ]);
 }
 
@@ -74,11 +76,11 @@ function renderMonthNav(ctx, year) {
         localState.selectedDate = null;
         if (localState.month === 0) {
           localState.month = 11;
-          ctx.setYear(year - 1);
+          localState.year -= 1;
         } else {
           localState.month -= 1;
-          ctx.refresh();
         }
+        ctx.refresh();
       },
     }, icon("chevron_left")),
     el("div", { class: "year-label", style: "font-size:16px" }, `${localState.month + 1}月`),
@@ -87,11 +89,11 @@ function renderMonthNav(ctx, year) {
         localState.selectedDate = null;
         if (localState.month === 11) {
           localState.month = 0;
-          ctx.setYear(year + 1);
+          localState.year += 1;
         } else {
           localState.month += 1;
-          ctx.refresh();
         }
+        ctx.refresh();
       },
     }, icon("chevron_right")),
   ]);
