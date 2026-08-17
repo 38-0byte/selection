@@ -7,7 +7,7 @@ import {
   upcomingEvents,
   deadlineItems,
 } from "../calc.js";
-import { findMember } from "../data.js";
+import { findMember, statusBadgeStyle } from "../data.js";
 
 // ホーム画面専用の対象年（他画面の年状態とは独立）
 const localState = { year: new Date().getFullYear() };
@@ -102,6 +102,7 @@ function renderUpcomingCard(ctx, year) {
               el("div", { class: "title" }, e.title || "(無題)"),
               el("div", { class: "sub" }, [timeRange, memberInfo?.member?.name].filter(Boolean).join(" ・ ")),
             ]),
+            el("span", { class: "status-badge", style: statusBadgeStyle(e.status) }, e.status),
           ]
         );
       })
