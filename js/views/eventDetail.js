@@ -1,6 +1,6 @@
 // 現場詳細画面：情報確認・編集・ステータス変更
 import { el, icon, formatDateLong, formatDateFull, formatTimeRange, formatCurrency, starHtml, toast } from "../utils.js";
-import { findMember, eventParticipants, STATUS_LIST, COST_FIELDS } from "../data.js";
+import { findMember, eventParticipants, STATUS_LIST, COST_FIELDS, statusBadgeStyle, statusChipStyle } from "../data.js";
 import { eventPlannedTotal, eventActualTotal, eventDiff } from "../calc.js";
 
 export function render(container, ctx, params) {
@@ -29,7 +29,7 @@ function renderBasicCard(event, mainInfo, participants, color) {
   return el("div", { class: "card" }, [
     el("div", { class: "card-row" }, [
       el("span", { class: "favorite-name muted" }, mainInfo?.group?.name || ""),
-      el("span", { class: "status-badge" }, event.status),
+      el("span", { class: "status-badge", style: statusBadgeStyle(event.status) }, event.status),
     ]),
     el("div", { class: "page-title", style: `margin:6px 0 4px; border-left:4px solid ${color}; padding-left:10px` }, event.title || "(無題)"),
     el(
@@ -227,6 +227,7 @@ function openStatusModal(ctx, event, container) {
             "button",
             {
               class: `status-chip${event.status === s ? " selected" : ""}`,
+              style: statusChipStyle(s, event.status === s),
               onclick: () => {
                 event.status = s;
                 ctx.save();
