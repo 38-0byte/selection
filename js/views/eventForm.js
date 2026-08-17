@@ -15,7 +15,9 @@ function cloneCost(cost) {
 export function render(container, ctx, params) {
   const data = ctx.data;
   const isEdit = params.mode === "edit";
+  const isDuplicate = params.mode === "duplicate";
   const existing = isEdit ? data.events.find((e) => e.id === params.id) : null;
+  const source = isDuplicate ? data.events.find((e) => e.id === params.sourceId) : null;
 
   const formState = existing
     ? {
@@ -37,6 +39,28 @@ export function render(container, ctx, params) {
         plannedCost: cloneCost(existing.plannedCost),
         actualCost: cloneCost(existing.actualCost),
         memo: existing.memo,
+      }
+    : source
+    ? {
+        // 複製：ステータスは初期状態へ、実績費用は0円にリセット。それ以外は複製元の内容を引き継ぐ
+        favoriteIds: [...(source.favoriteIds || [])],
+        mainFavoriteId: source.mainFavoriteId || "",
+        title: source.title,
+        category: source.category,
+        date: source.date,
+        startTime: source.startTime || "",
+        endTime: source.endTime || "",
+        venue: source.venue,
+        prefecture: source.prefecture,
+        priority: source.priority,
+        status: STATUS_LIST[0],
+        applicationStart: source.applicationStart,
+        applicationDeadline: source.applicationDeadline,
+        resultDate: source.resultDate,
+        paymentDeadline: source.paymentDeadline,
+        plannedCost: cloneCost(source.plannedCost),
+        actualCost: emptyCost(),
+        memo: source.memo,
       }
     : {
         favoriteIds: [],
@@ -388,7 +412,7 @@ function handleSave(ctx, formState, isEdit, existing, container) {
     return;
   }
 
-  const year = formState.date ? Number(formState.date.slice(0, 4)) : ctx.data.settings.currentYear;
+  const year = formState.date ? Number(formState.date.slice(0, 4)) : new Date().getFullYear();
 
   if (isEdit && existing) {
     Object.assign(existing, formState, { year });
