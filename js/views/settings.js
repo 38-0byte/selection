@@ -3,6 +3,9 @@ import { el, icon, toast, formatCurrency } from "../utils.js";
 import { generateId, ACCENT_PALETTE } from "../data.js";
 import { exportBackup, readBackupFile, mergeData, saveData } from "../storage.js";
 
+// 予算設定セクション専用の対象年（他画面の年状態とは独立）
+const budgetState = { year: new Date().getFullYear() };
+
 export function render(container, ctx) {
   container.appendChild(el("div", { class: "page-title" }, "設定"));
   container.appendChild(renderFavoritesSection(ctx, container));
@@ -218,12 +221,17 @@ function renderCategoriesSection(ctx, root) {
 }
 
 function renderBudgetSection(ctx) {
-  const year = ctx.data.settings.currentYear;
+  const year = budgetState.year;
   const current = ctx.data.settings.annualBudgets[year] || 0;
 
   const input = el("input", { type: "number", min: "0", value: current || "" });
   return el("div", { class: "card" }, [
-    el("div", { class: "section-label", style: "margin-top:0" }, `年間予算設定（${year}年）`),
+    el("div", { class: "section-label", style: "margin-top:0" }, "年間予算設定"),
+    el("div", { class: "year-switch", style: "margin:4px 0 14px" }, [
+      el("button", { onclick: () => { budgetState.year -= 1; ctx.refresh(); } }, icon("chevron_left")),
+      el("div", { class: "year-label", style: "font-size:16px" }, `${year}年`),
+      el("button", { onclick: () => { budgetState.year += 1; ctx.refresh(); } }, icon("chevron_right")),
+    ]),
     el("div", { class: "field-row" }, [
       el("div", { class: "field", style: "margin-bottom:0; flex:1" }, input),
       el(
@@ -233,7 +241,7 @@ function renderBudgetSection(ctx) {
           onclick: () => {
             ctx.data.settings.annualBudgets[year] = Number(input.value) || 0;
             ctx.save();
-            toast(`予算を${formatCurrency(Number(input.value) || 0)}に設定しました`);
+            toast(`${year}年の予算を${formatCurrency(Number(input.value) || 0)}に設定しました`);
             ctx.refresh();
           },
         },
@@ -271,7 +279,7 @@ function renderDataSection(ctx, root) {
         "button",
         {
           class: "btn btn-secondary",
-          onclick: () => exportBackup(ctx.data, ctx.data.settings.currentYear),
+          onclick: () => exportBackup(ctx.data, new Date().getFullYear()),
         },
         [icon("file_download"), "JSON書き出し"]
       ),
