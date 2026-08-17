@@ -12,18 +12,28 @@ import { findMember, allMembers } from "../data.js";
 
 let chartInstance = null;
 
-const monthlyState = { month: new Date().getMonth() };
+// ダッシュボード画面専用の対象年・月（他画面の年状態とは独立）
+const localState = { year: new Date().getFullYear(), month: new Date().getMonth() };
 
 export function render(container, ctx) {
-  const year = ctx.data.settings.currentYear;
+  const year = localState.year;
   const events = yearEvents(ctx.data.events, year);
 
   container.appendChild(el("div", { class: "page-title" }, "ダッシュボード"));
+  container.appendChild(renderYearSwitch(ctx, year));
   container.appendChild(renderSpendCard(ctx, year));
   container.appendChild(renderMonthlySpendCard(ctx, year));
   container.appendChild(renderPieCard(ctx, year));
   container.appendChild(renderCountCards(ctx, events));
   container.appendChild(renderFavoriteCountCard(ctx, year));
+}
+
+function renderYearSwitch(ctx, year) {
+  return el("div", { class: "year-switch" }, [
+    el("button", { onclick: () => { localState.year -= 1; ctx.refresh(); } }, icon("chevron_left")),
+    el("div", { class: "year-label" }, `${year}年`),
+    el("button", { onclick: () => { localState.year += 1; ctx.refresh(); } }, icon("chevron_right")),
+  ]);
 }
 
 function renderSpendCard(ctx, year) {
@@ -40,7 +50,7 @@ function renderSpendCard(ctx, year) {
 
 function renderMonthlySpendCard(ctx, year) {
   const months = monthlySpend(ctx.data.events, year);
-  const current = months[monthlyState.month];
+  const current = months[localState.month];
 
   return el("div", { class: "card" }, [
     el("div", { class: "section-label", style: "margin-top:0" }, `${year}年 ${current.month}月 月間支出`),
@@ -49,7 +59,7 @@ function renderMonthlySpendCard(ctx, year) {
         "button",
         {
           onclick: () => {
-            monthlyState.month = monthlyState.month === 0 ? 11 : monthlyState.month - 1;
+            localState.month = localState.month === 0 ? 11 : localState.month - 1;
             ctx.refresh();
           },
         },
@@ -60,7 +70,7 @@ function renderMonthlySpendCard(ctx, year) {
         "button",
         {
           onclick: () => {
-            monthlyState.month = monthlyState.month === 11 ? 0 : monthlyState.month + 1;
+            localState.month = localState.month === 11 ? 0 : localState.month + 1;
             ctx.refresh();
           },
         },
